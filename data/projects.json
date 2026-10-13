@@ -1,0 +1,71 @@
+[
+  {
+    "slug": "dukaanos",
+    "name": "DukaanOS",
+    "category": "Offline Shop Management System",
+    "image": "/images/project-dukaanos.png",
+    "summary": "A complete offline shop management system for local shopkeepers. Manage sales, stock, customers and more — without internet.",
+    "problem": "Small shops lose track of stock and daily sales on paper registers, and most POS tools stop working without a stable internet connection.",
+    "stack": [
+      "React",
+      "Electron",
+      "SQLite",
+      "Tailwind CSS"
+    ],
+    "features": [
+      "Offline-first sales and billing flow",
+      "Stock and low-inventory alerts",
+      "Customer ledger and due tracking",
+      "Daily / monthly sales reports"
+    ],
+    "contribution": "Designed the data model, built the full desktop UI and implemented the local SQLite persistence layer.",
+    "demo": "",
+    "repo": "https://github.com"
+  },
+  {
+    "slug": "bin-saleh-store",
+    "name": "BIN SALEH Store",
+    "category": "E-commerce Website",
+    "image": "/images/project-store.png",
+    "summary": "A modern e-commerce platform with product categories, cart and a secure checkout experience.",
+    "problem": "A local clothing retailer needed an online storefront to sell beyond walk-in customers and manage products without a developer.",
+    "stack": [
+      "React",
+      "Node.js",
+      "MongoDB",
+      "Cloudinary"
+    ],
+    "features": [
+      "Product catalogue with categories and search",
+      "Cart and checkout flow",
+      "Admin product & order management",
+      "Cloud image uploads and optimisation"
+    ],
+    "contribution": "Built the storefront UI, the REST API for products and orders, and the admin dashboard.",
+    "demo": "https://example.com",
+    "repo": "https://github.com"
+  },
+  {
+    "slug": "portfolio",
+    "name": "Portfolio Website",
+    "category": "Personal Portfolio",
+    "image": "/images/project-portfolio.png",
+    "summary": "A responsive and modern portfolio website to showcase my skills, projects and services.",
+    "problem": "Clients and recruiters needed one clear place to understand what I build and how to reach me.",
+    "stack": [
+      "Next.js",
+      "React",
+      "Tailwind CSS",
+      "PostgreSQL"
+    ],
+    "features": [
+      "Server-rendered, SEO-friendly pages",
+      "Accessible dark / light theme",
+      "Contact form stored in PostgreSQL",
+      "Fully responsive layout"
+    ],
+    "contribution": "Designed and developed the entire site, front to back.",
+    "demo": "",
+    "repo": "https://github.com"
+  }
+]

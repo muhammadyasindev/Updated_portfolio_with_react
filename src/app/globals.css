@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #05060f;
+  --color-ink-2: #0a0c1b;
+  --color-brand: #e11d48;
+  --color-brand-2: #f97316;
+}
+
+:root {
+  --bg: #05060f;
+  --bg-soft: #0a0c1b;
+  --card: rgba(255, 255, 255, 0.035);
+  --border: rgba(255, 255, 255, 0.09);
+  --fg: #eef1ff;
+  --muted: #9aa3c4;
+}
+
+html.light {
+  --bg: #f6f7fb;
+  --bg-soft: #ffffff;
+  --card: rgba(10, 12, 27, 0.025);
+  --border: rgba(10, 12, 27, 0.1);
+  --fg: #0d1024;
+  --muted: #555d7a;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  overflow-x: hidden;
+}
+
+.muted { color: var(--muted); }
+.border-line { border-color: var(--border); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease, background .3s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(225, 29, 72, 0.5);
+  box-shadow: 0 18px 50px -24px rgba(225, 29, 72, 0.7);
+}
+
+.glass {
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.chip {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 4px 10px;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #fb7185, #f97316);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #e11d48, #f43f5e);
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 12px 34px -14px rgba(225, 29, 72, 0.95);
+  transition: transform .2s ease, filter .2s ease;
+}
+.btn-primary:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
+.btn-ghost {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+.btn-ghost:hover { transform: translateY(-2px); border-color: rgba(225, 29, 72,.6); }
+
+.field {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  padding: .7rem .9rem;
+  color: var(--fg);
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.field::placeholder { color: var(--muted); }
+.field:focus {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.22);
+}
+
+:focus-visible {
+  outline: 2px solid #fb7185;
+  outline-offset: 3px;
+}
+
+.glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(120px);
+  opacity: .5;
+  pointer-events: none;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .7s ease, transform .7s ease;
+}
+.reveal.in { opacity: 1; transform: none; }
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes marquee-rev { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes shimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+@keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,.6); } 50% { box-shadow: 0 0 0 6px rgba(52,211,153,0); } }
+
+.marquee { display: flex; width: max-content; animation: marquee 32s linear infinite; }
+.marquee.rev { animation-name: marquee-rev; }
+.marquee-wrap { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.marquee-wrap:hover .marquee { animation-play-state: paused; }
+.float { animation: float 6s ease-in-out infinite; }
+.float-delay { animation: float 7s ease-in-out 1.5s infinite; }
+.spin-slow { animation: spin-slow 18s linear infinite; }
+.gradient-text { background-size: 200% auto; animation: shimmer 6s linear infinite; background-image: linear-gradient(90deg, #fb7185, #f97316, #fb7185); }
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee, .float, .float-delay, .spin-slow, .gradient-text, .pulse-dot { animation: none !important; }
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

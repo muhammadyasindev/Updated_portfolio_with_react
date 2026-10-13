@@ -1,0 +1,11 @@
+[
+  {
+    "id": "87d16d77-4204-4adc-bd96-a757944e8a39",
+    "name": "Test Client",
+    "email": "test@client.com",
+    "subject": "New project enquiry",
+    "message": "Hello Yasin, I need a website with great design!",
+    "read": false,
+    "createdAt": "2026-10-12T18:38:33.159Z"
+  }
+]

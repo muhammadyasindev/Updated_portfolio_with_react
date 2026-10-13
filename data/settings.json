@@ -1,0 +1,122 @@
+{
+  "name": "Yasin Baloch",
+  "copyrightName": "yasin sasoli",
+  "initials": "YB",
+  "title": "Full-Stack Developer",
+  "available": true,
+  "email": "devlonictechnologies186@gmil.com",
+  "whatsapp": "03324042186",
+  "location": "Pakistan",
+  "logoType": "initials",
+  "logoImage": "",
+  "heroImage": "/uploads/10c58f93-aa26-493f-993c-c45ff6e059dc_f09d64a2.jpg",
+  "aboutImage": "/uploads/10c58f93-aa26-493f-993c-c45ff6e059dc_e227e70b.jpg",
+  "gallery": [
+    {
+      "src": "/images/project-dukaanos.png",
+      "alt": "DukaanOS dashboard interface",
+      "caption": "Dashboards that simplify daily operations"
+    },
+    {
+      "src": "/images/gallery-1.jpg",
+      "alt": "Hands typing code on a keyboard",
+      "caption": "Clean, maintainable code"
+    },
+    {
+      "src": "/images/gallery-2.jpg",
+      "alt": "Wireframes and user flows on a whiteboard",
+      "caption": "Planning the user experience"
+    },
+    {
+      "src": "/images/about-desk.jpg",
+      "alt": "Laptop with code on a desk",
+      "caption": "Focused development"
+    },
+    {
+      "src": "/images/project-store.png",
+      "alt": "E-commerce storefront",
+      "caption": "Storefronts that sell"
+    }
+  ],
+  "heroBadges": [
+    "React",
+    "Next.js",
+    "Node.js",
+    "MongoDB",
+    "Tailwind",
+    "Git"
+  ],
+  "skillGroups": [
+    {
+      "title": "Frontend",
+      "icon": "fa-brands fa-react",
+      "accent": "from-sky-500/20 to-sky-500/0",
+      "items": [
+        "React",
+        "Next.js",
+        "Tailwind CSS",
+        "JavaScript",
+        "HTML",
+        "CSS"
+      ]
+    },
+    {
+      "title": "Backend",
+      "icon": "fa-solid fa-server",
+      "accent": "from-emerald-500/20 to-emerald-500/0",
+      "items": [
+        "Node.js",
+        "Express.js",
+        "REST APIs",
+        "JWT Auth"
+      ]
+    },
+    {
+      "title": "Databases",
+      "icon": "fa-solid fa-database",
+      "accent": "from-violet-500/20 to-violet-500/0",
+      "items": [
+        "MongoDB",
+        "PostgreSQL",
+        "SQLite",
+        "Drizzle ORM"
+      ]
+    },
+    {
+      "title": "Tools & Deployment",
+      "icon": "fa-solid fa-screwdriver-wrench",
+      "accent": "from-amber-500/20 to-amber-500/0",
+      "items": [
+        "Git",
+        "GitHub",
+        "Vercel",
+        "VS Code",
+        "Docker"
+      ]
+    }
+  ],
+  "intro": "I build modern, fast and scalable web applications that help businesses grow. I turn ideas into real products with clean code and great user experiences.",
+  "about": [
+    "I'm a full-stack developer who loves building useful and scalable web applications. I enjoy solving problems, writing clean code and learning new technologies.",
+    "I focus on creating solutions that are not only functional but also simple, fast and easy to use."
+  ],
+  "socials": [
+    {
+      "label": "GitHub",
+      "href": "https://github.com",
+      "icon": "github"
+    },
+    {
+      "label": "LinkedIn",
+      "href": "https://linkedin.com",
+      "icon": "linkedin"
+    },
+    {
+      "label": "WhatsApp",
+      "href": "https://wa.me/923324042186",
+      "icon": "whatsapp"
+    }
+  ],
+  "adminPin": "Yasin123#",
+  "updatedAt": "2026-10-12T18:20:07.992Z"
+}
