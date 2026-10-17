@@ -56,15 +56,179 @@ function normalizeFaIcon(icon) {
   return "fa-solid fa-code";
 }
 
-async function uploadFile(file) {
+// Compress image files client-side before sending over the network to prevent 413 Payload Too Large
+async function compressImageFile(file, { maxWidth = 1600, maxHeight = 1600, quality = 0.82 } = {}) {
   if (!file) return null;
+  // If not an image or SVG/GIF (preserve vector and animations), return as-is
+  if (!file.type || !file.type.startsWith("image/") || file.type === "image/svg+xml" || file.type === "image/gif") {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || !window.FileReader) {
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          let { width, height } = img;
+
+          // Scale down proportionally if larger than maximum bounds
+          if (width > maxWidth || height > maxHeight) {
+            if (width / height > maxWidth / maxHeight) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(file);
+            return;
+          }
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Attempt WebP compression first; fallback to JPEG
+          canvas.toBlob(
+            (blob) => {
+              if (!blob || blob.size > file.size) {
+                // If WebP blob wasn't smaller, try high quality JPEG
+                canvas.toBlob(
+                  (jpegBlob) => {
+                    if (!jpegBlob || jpegBlob.size > file.size) {
+                      resolve(file);
+                    } else {
+                      const newFile = new File([jpegBlob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                        type: "image/jpeg",
+                      });
+                      resolve(newFile);
+                    }
+                  },
+                  "image/jpeg",
+                  quality
+                );
+                return;
+              }
+
+              const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".webp"), {
+                type: "image/webp",
+              });
+              resolve(newFile);
+            },
+            "image/webp",
+            quality
+          );
+        } catch {
+          resolve(file);
+        }
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Compress data URLs that might be too large before sending to /api/settings or /api/projects
+async function compressDataUrl(dataUrl, maxWidth = 1400, quality = 0.8) {
+  if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
+    return dataUrl;
+  }
+  // If string length is under 300KB (~225KB binary), no need to compress
+  if (dataUrl.length < 350000) {
+    return dataUrl;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(dataUrl);
+          return;
+        }
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL("image/webp", quality);
+        resolve(compressed.length < dataUrl.length ? compressed : dataUrl);
+      } catch {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+// Sanitize the settings object so no oversized data URLs are sent in the payload
+async function sanitizeSettingsPayload(rawSettings) {
+  if (!rawSettings) return rawSettings;
+  const clone = { ...rawSettings };
+
+  if (clone.heroImage?.startsWith("data:image/")) {
+    clone.heroImage = await compressDataUrl(clone.heroImage, 1600, 0.82);
+  }
+  if (clone.aboutImage?.startsWith("data:image/")) {
+    clone.aboutImage = await compressDataUrl(clone.aboutImage, 1200, 0.82);
+  }
+  if (clone.logoImage?.startsWith("data:image/")) {
+    clone.logoImage = await compressDataUrl(clone.logoImage, 512, 0.85);
+  }
+  if (Array.isArray(clone.gallery)) {
+    clone.gallery = await Promise.all(
+      clone.gallery.map(async (item) => {
+        if (item?.src?.startsWith("data:image/")) {
+          const compressed = await compressDataUrl(item.src, 1200, 0.8);
+          return { ...item, src: compressed };
+        }
+        return item;
+      })
+    );
+  }
+  return clone;
+}
+
+async function uploadFile(file, options = {}) {
+  if (!file) return null;
+  // Automatically optimize image in browser first
+  const optimized = await compressImageFile(file, options);
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", optimized);
   const res = await fetch("/api/upload", { method: "POST", body: formData });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Upload failed");
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error("File exceeds upload limit (413). Please choose a smaller image.");
+    }
+    throw new Error(data.error || "Upload failed");
+  }
   return data.url;
 }
+
 
 function Input({ label, sublabel, className = "", ...props }) {
   return (
@@ -253,24 +417,34 @@ export default function AdminPage() {
       return;
     }
     setSavingProject(true);
-    const payload = {
-      ...projectForm,
-      originalSlug: editingProject ? editingProject.slug : undefined,
-      stack: typeof projectForm.stack === "string"
-        ? projectForm.stack.split(",").map((s) => s.trim()).filter(Boolean)
-        : projectForm.stack,
-      features: typeof projectForm.features === "string"
-        ? projectForm.features.split("\n").map((f) => f.trim()).filter(Boolean)
-        : projectForm.features,
-    };
     try {
+      let image = projectForm.image;
+      if (image && typeof image === "string" && image.startsWith("data:image/")) {
+        image = await compressDataUrl(image, 1400, 0.82);
+      }
+      const payload = {
+        ...projectForm,
+        image,
+        originalSlug: editingProject ? editingProject.slug : undefined,
+        stack: typeof projectForm.stack === "string"
+          ? projectForm.stack.split(",").map((s) => s.trim()).filter(Boolean)
+          : projectForm.stack,
+        features: typeof projectForm.features === "string"
+          ? projectForm.features.split("\n").map((f) => f.trim()).filter(Boolean)
+          : projectForm.features,
+      };
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save project");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 413) {
+          throw new Error("Project payload too large (413). Please choose a smaller preview image.");
+        }
+        throw new Error(data.error || "Failed to save project");
+      }
       showToast(editingProject ? "Project updated successfully!" : "New project published!");
       cancelProjectForm();
       fetchProjects();
@@ -299,13 +473,14 @@ export default function AdminPage() {
     if (!file) return;
     setUploadingImage(true);
     try {
-      const url = await uploadFile(file);
+      const url = await uploadFile(file, { maxWidth: 1600, maxHeight: 1200, quality: 0.82 });
       setProjectForm((prev) => ({ ...prev, image: url }));
-      showToast("Project image uploaded!");
+      showToast("Project preview image uploaded & optimized!");
     } catch (err) {
       showToast(err.message, "error");
     } finally {
       setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -314,13 +489,14 @@ export default function AdminPage() {
     if (!file) return;
     setUploadingHero(true);
     try {
-      const url = await uploadFile(file);
+      const url = await uploadFile(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
       setSettings((prev) => ({ ...prev, heroImage: url }));
-      showToast("Hero image uploaded!");
+      showToast("Hero image uploaded! Click 'Save All Visual Updates' to apply.");
     } catch (err) {
       showToast(err.message, "error");
     } finally {
       setUploadingHero(false);
+      if (heroInputRef.current) heroInputRef.current.value = "";
     }
   }
 
@@ -329,13 +505,14 @@ export default function AdminPage() {
     if (!file) return;
     setUploadingAbout(true);
     try {
-      const url = await uploadFile(file);
+      const url = await uploadFile(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
       setSettings((prev) => ({ ...prev, aboutImage: url }));
-      showToast("About section image uploaded!");
+      showToast("About section photo uploaded! Click 'Save All Visual Updates' to apply.");
     } catch (err) {
       showToast(err.message, "error");
     } finally {
       setUploadingAbout(false);
+      if (aboutInputRef.current) aboutInputRef.current.value = "";
     }
   }
 
@@ -344,15 +521,16 @@ export default function AdminPage() {
     if (!file) return;
     setUploadingGalleryIdx(index);
     try {
-      const url = await uploadFile(file);
+      const url = await uploadFile(file, { maxWidth: 1400, maxHeight: 1000, quality: 0.82 });
       const newGallery = [...(settings.gallery || [])];
       if (newGallery[index]) newGallery[index].src = url;
       setSettings((prev) => ({ ...prev, gallery: newGallery }));
-      showToast(`Gallery image #${index + 1} uploaded!`);
+      showToast(`Gallery photo #${index + 1} uploaded! Click 'Save All Visual Updates' to apply.`);
     } catch (err) {
       showToast(err.message, "error");
     } finally {
       setUploadingGalleryIdx(null);
+      if (galleryInputRefs.current[index]) galleryInputRefs.current[index].value = "";
     }
   }
 
@@ -361,13 +539,14 @@ export default function AdminPage() {
     if (!file) return;
     setUploadingLogo(true);
     try {
-      const url = await uploadFile(file);
+      const url = await uploadFile(file, { maxWidth: 512, maxHeight: 512, quality: 0.85 });
       setSettings((prev) => ({ ...prev, logoImage: url, logoType: "image" }));
-      showToast("Logo image uploaded!");
+      showToast("Logo image uploaded! Click 'Save Personal & Brand Settings' to apply.");
     } catch (err) {
       showToast(err.message, "error");
     } finally {
       setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
     }
   }
 
@@ -401,13 +580,21 @@ export default function AdminPage() {
     if (e && e.preventDefault) e.preventDefault();
     setSavingSettings(true);
     try {
+      // Pre-process and optimize any large base64 data URLs before sending to /api/settings
+      const cleanSettings = await sanitizeSettingsPayload(settings);
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(cleanSettings),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save settings");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 413) {
+          throw new Error("Payload too large (413). Please choose smaller images or external URLs.");
+        }
+        throw new Error(data.error || "Failed to save settings");
+      }
+      setSettings(data.settings || cleanSettings);
       showToast("Settings updated successfully!");
     } catch (err) {
       showToast(err.message, "error");

@@ -3,6 +3,9 @@ import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -12,8 +15,13 @@ export async function POST(request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    if (file.size > 12 * 1024 * 1024) {
+      return NextResponse.json({ error: "File exceeds 12MB limit" }, { status: 413 });
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
 
     try {
       const uploadsDir = path.join(process.cwd(), "public", "uploads");

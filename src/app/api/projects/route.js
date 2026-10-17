@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getProjects, saveProject, deleteProject } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 export async function GET() {
   try {
     const projects = await getProjects();
@@ -12,7 +15,15 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseErr) {
+      return NextResponse.json(
+        { error: "Payload too large or invalid JSON: " + parseErr.message },
+        { status: 400 }
+      );
+    }
     if (!body.name || !body.name.trim()) {
       return NextResponse.json({ error: "Project name is required" }, { status: 400 });
     }
